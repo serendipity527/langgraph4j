@@ -1,11 +1,11 @@
-# FAQ
+# 常见问题
 
-Common questions and their answers!
+常见问题及其答案！
 
-## The Compiled Graph Is thread safe?
+## 编译后的图（Compiled Graph）是线程安全的吗？
 
-Yes. the Compiled Graph is thread safe. It work on a new (and not shared) copy of state for each execution.
+是的。编译后的图是线程安全的。它为每次执行使用新的（非共享的）状态副本。
 
-## Is the Compiled Graph + Checkpoints + MemorySaver thread safe ?
+## 编译后的图 + 检查点 + 内存保存器 是线程安全的吗？
 
-Yes. But the state consistency between parallel calls to  `CompiledGraph.updateState()` is up to you.
+是的。但是对 `CompiledGraph.updateState()` 的并行调用之间的状态一致性需要您自己保证。

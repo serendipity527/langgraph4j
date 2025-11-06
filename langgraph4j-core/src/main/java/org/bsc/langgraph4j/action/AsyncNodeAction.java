@@ -7,27 +7,27 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
- * Represents an asynchronous node action that operates on an agent state and returns state update.
+ * 表示对代理状态进行操作并返回状态更新的异步节点动作接口。
  *
- * @param <S> the type of the agent state
+ * @param <S> 代理状态的类型
  */
 @FunctionalInterface
 public interface AsyncNodeAction<S extends AgentState> extends Function<S, CompletableFuture<Map<String, Object>>> {
 
     /**
-     * Applies this action to the given agent state.
+     * 对给定的代理状态应用此动作。
      *
-     * @param state the agent state
-     * @return a CompletableFuture representing the result of the action
+     * @param state 代理状态
+     * @return 包含动作结果的CompletableFuture
      */
     CompletableFuture<Map<String, Object>> apply(S state);
 
     /**
-     * Creates an asynchronous node action from a synchronous node action.
+     * 从同步节点动作创建一个异步节点动作。
      *
-     * @param syncAction the synchronous node action
-     * @param <S> the type of the agent state
-     * @return an asynchronous node action
+     * @param syncAction 同步节点动作
+     * @param <S> 代理状态的类型
+     * @return 异步节点动作
      */
     static <S extends AgentState> AsyncNodeAction<S> node_async(NodeAction<S> syncAction) {
         return t -> {

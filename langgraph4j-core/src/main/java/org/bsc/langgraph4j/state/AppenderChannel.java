@@ -8,45 +8,54 @@ import static java.util.Optional.ofNullable;
 import static org.bsc.langgraph4j.state.AgentState.MARK_FOR_REMOVAL;
 import static org.bsc.langgraph4j.state.AgentState.MARK_FOR_RESET;
 
-
 /**
- * AppenderChannel is a {@link Channel} implementation that
- * is used to accumulate a list of values.
+ * AppenderChannel 是一种 {@link Channel} 实现，
+ * 用于累积一组值集合（List）。
  *
- * @param <T> the type of the values being accumulated
- * @see Channel
+ * @param <T> 被累积值的类型
  */
 public class AppenderChannel<T> implements Channel<List<T>> {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AppenderChannel.class);
+
     /**
-     * A functional interface that is used to remove elements from a list.
+     * 用于标识和移除List中某元素的函数式接口
      *
-     * @param <T> the type of elements in the list
+     * @param <T> List中元素的类型
      */
     @FunctionalInterface
     public interface RemoveIdentifier<T> {
         /**
-         * Compares the specified element with the element at the given index.
+         * 比较指定元素与指定索引处元素的方法
          *
-         * @param element  the element to be compared
-         * @param atIndex  the index of the element to compare with
-         * @return a negative integer, zero, or a positive integer as this object is less than, equal to, or greater than the specified object.
+         * @param element  被比较的元素
+         * @param atIndex  用于比较的元素的索引
+         * @return 负数、0或者正数；分别代表小于、等于或大于被比较目标
          */
         int compareTo(T element, int atIndex );
     }
 
+    /**
+     * 表示用于"替换整个List"的新值包装类型
+     * @param <T>
+     */
     public record ReplaceAllWith<T>(List<T> newValues ) {
 
+        /**
+         * 用List创建ReplaceAllWith
+         */
         public static <T> ReplaceAllWith<T> of(List<T> newValues ) {
             return new ReplaceAllWith<>(newValues);
         }
+        /**
+         * 用单值创建ReplaceAllWith
+         */
         public static <T> ReplaceAllWith<T> of(T newValue ) {
             return new ReplaceAllWith<>( List.of(newValue) );
         }
     }
 
     /**
-     * Reducer that disallow duplicates
+     * 不允许重复的Reducer实现（通过hash判断）
      * @param <T>
      */
     public static class ReducerDisallowDuplicate<T> implements Reducer<List<T>> {
@@ -57,18 +66,17 @@ public class AppenderChannel<T> implements Channel<List<T>> {
                 return right;
             }
             for (T rValue : right) {
-                // remove duplicate
+                // 移除重复；如果left中没有与rValue hash值等价的元素，则添加
                 if (left.stream().noneMatch(lValue -> Objects.hash(lValue) == Objects.hash(rValue))) {
                     left.add(rValue);
                 }
             }
             return left;
-
         }
     }
 
     /**
-     * Reducer that allow duplicates
+     * 允许重复的Reducer实现
      * @param <T>
      */
     public static class ReducerAllowDuplicate<T> implements Reducer<List<T>> {
@@ -83,15 +91,11 @@ public class AppenderChannel<T> implements Channel<List<T>> {
         }
     }
 
-
     private final Reducer<List<T>> reducer;
     private final Supplier<List<T>> defaultProvider;
 
     /**
-     * Returns an {@link Optional} containing the current reducer if it is non-null.
-     *
-     * @return an {@code Optional} describing the current reducer wrapped in a non-empty optional,
-     *         or an empty optional if no such reducer exists
+     * 返回当前reducer（如果有）
      */
     @Override
     public Optional<Reducer<List<T>>> getReducer() {
@@ -99,9 +103,7 @@ public class AppenderChannel<T> implements Channel<List<T>> {
     }
 
     /**
-     * Returns the default provider or {@code Optional.empty()} if no default provider is set.
-     *
-     * @return an {@code Optional} containing the default provider, or {@code Optional.empty()}
+     * 返回默认值提供者（如果有）
      */
     @Override
     public Optional<Supplier<List<T>>> getDefault() {
@@ -109,10 +111,10 @@ public class AppenderChannel<T> implements Channel<List<T>> {
     }
 
     /**
-     * Constructs a new instance of {@code AppenderChannel} with the specified default provider.
+     * 构造带指定Reducer和默认值提供者的AppenderChannel
      *
-     * @param reducer a binary operator that is used to combine two lists into one
-     * @param defaultProvider a supplier for the default list that will be used when no other list is available
+     * @param reducer 合并List的Reducer
+     * @param defaultProvider 默认List生成器
      */
     protected AppenderChannel( Reducer<List<T>> reducer,  Supplier<List<T>> defaultProvider ) {
         this.reducer = reducer;
@@ -120,12 +122,12 @@ public class AppenderChannel<T> implements Channel<List<T>> {
     }
 
     /**
-     * This method removes elements from a given list based on the specified {@link RemoveIdentifier}.
-     * It creates a copy of the original list, performs the removal operation, and returns an immutable view of the result.
+     * 基于 RemoveIdentifier 从指定List移除元素。
+     * 会先复制原List，执行移除，返回不可变视图。
      *
-     * @param list The list from which elements will be removed.
-     * @param removeIdentifier An instance of {@link RemoveIdentifier} that defines how to identify elements for removal.
-     * @return An unmodifiable view of the modified list with specified elements removed.
+     * @param list            原始list
+     * @param removeIdentifier 元素匹配标识器
+     * @return 移除后的不可变list
      */
     private List<T> remove(List<T> list, RemoveIdentifier<T> removeIdentifier ) {
         var result = new ArrayList<>(list);
@@ -134,16 +136,13 @@ public class AppenderChannel<T> implements Channel<List<T>> {
     }
 
     /**
-     * Removes an element from the list that matches the specified identifier.
+     * 从List中移除第一个匹配 RemoveIdentifier 的元素
      *
-     * <p>This method iterates over the provided list and removes the first element for which the
-     * {@link RemoveIdentifier#compareTo} method returns zero.</p>
-     *
-     * @param result         the list to be modified
-     * @param removeIdentifier the identifier used to find the element to remove
+     * @param result 待操作list
+     * @param removeIdentifier 匹配器
      */
     private void removeFromList(List<T> result, RemoveIdentifier<T> removeIdentifier ) {
-        // Use an iterator to safely remove elements during iteration
+        // 用迭代器安全移除元素
         var iterator = result.iterator();
         int index = 0;
         while (iterator.hasNext()) {
@@ -155,13 +154,12 @@ public class AppenderChannel<T> implements Channel<List<T>> {
     }
 
     /**
-     * Represents a record for data removal operations with generic types.
+     * 表示用于移除操作的数据对象
      * 
-     * @param <T> the type of elements in the old values list
+     * @param <T> 老值的类型
      */
     record RemoveData<T>( List<T> oldValues, List<?> newValues) {
-
-        // copy constructor. make sure to copy the list to make them modifiable
+        // 拷贝构造器，保证list可变
         public RemoveData {
             oldValues = new ArrayList<>(oldValues);
             newValues = new ArrayList<>(newValues);
@@ -169,50 +167,48 @@ public class AppenderChannel<T> implements Channel<List<T>> {
     };
 
     /**
-     * Evaluates the removal of identifiers from the new values list and updates the RemoveData object accordingly.
+     * 处理移除标记的逻辑，返回移除后的新结果
      *
-     * @param oldValues   a {@code List} of old values
-     * @param newValues   a {@code List} of new values containing {@code RemoveIdentifier}s to be evaluated for removal
-     * @return            a {@literal RemoveData<T>} object with updated old and new values after removing identifiers
+     * @param oldValues 老值
+     * @param newValues 新值（包含可能的RemoveIdentifier）
+     * @return 移除匹配项后的RemoveData
      */
     @SuppressWarnings("unchecked")
     private RemoveData<T> evaluateRemoval(List<T> oldValues, List<?> newValues ) {
-
         final var result = new RemoveData<>( oldValues, newValues );
 
         newValues.stream()
-                 .filter( value -> value instanceof RemoveIdentifier<?> )
-                 .forEach( value -> {
-                        result.newValues().remove( value );
-                        var removeIdentifier = (RemoveIdentifier<T>) value;
-                        removeFromList( result.oldValues(), removeIdentifier );
-
+                .filter( value -> value instanceof RemoveIdentifier<?> )
+                .forEach( value -> {
+                    result.newValues().remove( value );
+                    var removeIdentifier = (RemoveIdentifier<T>) value;
+                    removeFromList( result.oldValues(), removeIdentifier );
                 });
         return result;
-
     }
 
+    /**
+     * 校验新值的类型，并强制转换为指定类型List
+     */
     @SuppressWarnings("unchecked")
     protected List<T> validateNewValues(List<?> list  ) {
         return (List<T>)list;
     }
 
     /**
-     * Updates the value for a given key in the channel.
+     * 更新指定key的通道内容
      * 
-     * @param key     The key for which the value needs to be updated.
-     * @param oldValue    The old value that is being replaced.
-     * @param newValue    The new value to be set. If null, the old value will be returned.
-     * 
-     * @return          The updated old value or the new value if the update was successful.
-     * 
-     * @throws UnsupportedOperationException   If the channel does not support updates, typically due to an immutable list being used.
+     * @param key     要更新的key
+     * @param oldValue    旧值
+     * @param newValue    新值（如为null返回旧值）
+     * @return        更新后的新值（或旧值）
+     * @throws UnsupportedOperationException   如果底层list不可变且不支持update
      */
     @SuppressWarnings("unchecked")
     public final Object update( String key, Object oldValue, Object newValue) {
         ;
         if( isMarkedForReset(newValue) ) {
-            // if newValue is null or MARK_FOR_DELETION, the channel is reset to the default value
+            // 如果newValue为null或复位标志，则用默认值重置通道
             return getDefault().orElse(ArrayList::new).get();
         }
         if( isMarkedForRemoval(newValue) ) {
@@ -248,7 +244,7 @@ public class AppenderChannel<T> implements Channel<List<T>> {
             return Channel.super.update(key, oldValue, typedList);
         }
         catch (UnsupportedOperationException ex) {
-            log.error("Unsupported operation: probably because the appendable channel has been initialized with a immutable List. Check please !");
+            log.error("不支持的操作：可能是channels被初始化为不可变List导致，请检查！");
             throw ex;
         }
     }

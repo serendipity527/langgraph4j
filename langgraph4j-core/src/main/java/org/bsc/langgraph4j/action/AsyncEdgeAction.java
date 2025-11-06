@@ -4,28 +4,29 @@ import org.bsc.langgraph4j.state.AgentState;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+
 /**
- * Represents an asynchronous edge action that operates on an agent state and returns a new route.
- * 
- * @param <S> the type of the agent state
+ * 表示一个异步边动作接口，在给定 AgentState 时，返回用于跳转的下一个节点名称。
+ *
+ * @param <S> agent 状态的类型
  */
 @FunctionalInterface
 public interface AsyncEdgeAction<S extends AgentState> extends Function<S, CompletableFuture<String>> {
 
     /**
-     * Applies this action to the given agent state.
+     * 对给定的 agent 状态执行此动作。
      *
-     * @param state the agent state
-     * @return a CompletableFuture representing the result of the action
+     * @param state 当前的 agent 状态
+     * @return 一个 CompletableFuture，表示异步跳转结果（下一个节点的名称）
      */
     CompletableFuture<String> apply(S state);
 
     /**
-     * Creates an asynchronous edge action from a synchronous edge action.
+     * 将同步的 EdgeAction 转换为异步的 AsyncEdgeAction。
      *
-     * @param syncAction the synchronous edge action
-     * @param <S> the type of the agent state
-     * @return an asynchronous edge action
+     * @param syncAction 同步的边动作
+     * @param <S> agent 状态的类型
+     * @return 转换后的异步边动作
      */
     static <S extends AgentState> AsyncEdgeAction<S> edge_async(EdgeAction<S> syncAction ) {
         return t -> {
@@ -39,4 +40,3 @@ public interface AsyncEdgeAction<S extends AgentState> extends Function<S, Compl
         };
     }
 }
-

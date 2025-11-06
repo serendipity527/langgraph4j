@@ -1,50 +1,50 @@
 
-# Common Agentic Patterns
+# 常见智能体模式
 
-## Structured Output
+## 结构化输出
 
-> _TO DO _
+> _待完成_
 
-## Tool calling
+## 工具调用
 
-> _TO DO _
+> _待完成_
 
-## Memory
+## 记忆
 
-> _TO DO _
+> _待完成_
 
-## Human-in-the-loop
+## 人机协同
 
-> _TO DO _
+> _待完成_
 
-### Approval
+### 审批
 
-> _TO DO _
+> _待完成_
 
-### Wait for input
+### 等待输入
 
-> _TO DO _
+> _待完成_
 
-### Edit agent actions
+### 编辑智能体动作
 
-> _TO DO _
+> _待完成_
 
-### Time travel
+### 时间旅行
 
-> _TO DO _
+> _待完成_
 
-## Multi-agent
+## 多智能体
 
-> _TO DO _
+> _待完成_
 
-## Planning
+## 规划
 
-> _TO DO _
+> _待完成_
 
-## Reflection
+## 反思
 
-> _TO DO _
+> _待完成_
 
-## ReAct Agent
+## ReAct 智能体
 
-> _TO DO _
+> _待完成_

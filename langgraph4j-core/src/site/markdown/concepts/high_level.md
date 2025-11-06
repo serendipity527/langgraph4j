@@ -1,53 +1,53 @@
-# LangGraph for Agentic Applications
+# 面向智能体应用的 LangGraph
 
-## What does it mean to be agentic?
+## 什么是智能体化（agentic）？
 
-Other people may talk about a system being an "agent" - we prefer to talk about systems being "agentic". But what does this actually mean?
+有些人可能会讨论系统是否是"智能体（agent）"——而我们更倾向于讨论系统是否具有"智能体化（agentic）"的特征。但这究竟意味着什么呢？
 
-When we talk about systems being "agentic", we are talking about systems that use an LLM to decide the control flow of an application. There are different levels that an LLM can be used to decide the control flow, and this spectrum of "agentic" makes more sense to us than defining an arbitrary cutoff for what is or isn't an agent.
+当我们谈论系统具有"智能体化"特征时，我们指的是使用大语言模型（LLM）来决定应用程序控制流的系统。LLM 可以在不同层次上用于决定控制流，对我们来说，这种"智能体化"的连续谱比定义一个任意的界限来划分什么是或不是智能体更有意义。
 
-Examples of using an LLM to decide the control of an application:
+使用 LLM 决定应用程序控制流的例子：
 
-- Using an LLM to route between two potential paths
-- Using an LLM to decide which of many tools to call
-- Using an LLM to decide whether the generated answer is sufficient or more work is need
+- 使用 LLM 在两个潜在路径之间进行路由
+- 使用 LLM 决定调用众多工具中的哪一个
+- 使用 LLM 决定生成的答案是否足够充分，或是否需要更多工作
 
-The more times these types of decisions are made inside an application, the more agentic it is.
-If these decisions are being made in a loop, then its even more agentic!
+在应用程序内部做出这类决策的次数越多，它就越具有智能体化特征。
+如果这些决策是在循环中做出的，那就更加智能体化了！
 
-There are other concepts often associated with being agentic, but we would argue these are a by-product of the above definition:
+还有其他一些通常与智能体化相关的概念，但我们认为这些是上述定义的副产品：
 
-- [Tool calling](agentic_concepts.md#tool-calling): this is often how LLMs make decisions
-- Action taking: often times, the LLMs' outputs are used as the input to an action
-- [Memory](agentic_concepts.md#memory): reliable systems need to have knowledge of things that occurred
-- [Planning](agentic_concepts.md#planning): planning steps (either explicit or implicit) are useful for ensuring that the LLM, when making decisions, makes them in the highest fidelity way.
+- [工具调用](agentic_concepts.md#tool-calling)：这通常是 LLM 做出决策的方式
+- 行动执行：通常情况下，LLM 的输出被用作某个行动的输入
+- [记忆](agentic_concepts.md#memory)：可靠的系统需要具备对已发生事件的知识
+- [规划](agentic_concepts.md#planning)：规划步骤（显式或隐式的）有助于确保 LLM 在做决策时以最高保真度进行决策。
 
-## Why LangGraph?
+## 为什么选择 LangGraph？
 
-LangGraph has several core principles that we believe make it the most suitable framework for building agentic applications:
+LangGraph 拥有几个核心原则，我们相信这些原则使其成为构建智能体应用程序最合适的框架：
 
-- [Controllability](../how-tos/index.md#controllability)
-- [Human-in-the-Loop](../how-tos/index.md#human-in-the-loop)
-- [Streaming First](../how-tos/index.md#streaming)
+- [可控性](../how-tos/index.md#controllability)
+- [人机协同](../how-tos/index.md#human-in-the-loop)
+- [流式优先](../how-tos/index.md#streaming)
 
-**Controllability**
+**可控性**
 
-LangGraph is extremely low level. This gives you a high degree of control over what the system you are building actually does. We believe this is important because it is still hard to get agentic systems to work reliably, and we've seen that the more control you exercise over them, the more likely it is that they will "work".
+LangGraph 是极其低层级的。这使您对所构建系统的实际行为拥有高度的控制权。我们认为这很重要，因为让智能体系统可靠地工作仍然很困难，而我们发现，您对它们施加的控制越多，它们"工作"的可能性就越大。
 
-**Human-in-the-Loop**
+**人机协同**
 
-LangGraph comes with a built-in persistence layer as a first-class concept. This enables several different human-in-the-loop interaction patterns. We believe that "Human-Agent Interaction" patterns will be the new "Human-Computer Interaction", and have built LangGraph with built in persistence to enable this.
+LangGraph 将内置持久化层作为一等公民概念。这使得多种不同的人机协同交互模式成为可能。我们相信"人机交互（Human-Agent Interaction）"模式将成为新的"人机交互（Human-Computer Interaction）"，并因此在 LangGraph 中内置了持久化功能来实现这一点。
 
-**Streaming First**
+**流式优先**
 
-LangGraph comes with first class support for streaming. Agentic applications often take a while to run, and so giving the user some idea of what is happening is important, and streaming is a great way to do that. LangGraph supports streaming of both events ([like a tool call being taken](../how-tos/stream-updates.ipynb)) as well as of tokens that an LLM may emit.
+LangGraph 对流式传输提供了一流的支持。智能体应用程序通常需要运行一段时间，因此让用户了解正在发生什么是很重要的，而流式传输是实现这一目标的绝佳方式。LangGraph 支持事件流式传输（[例如工具调用的执行](../how-tos/stream-updates.ipynb)）以及 LLM 可能发出的令牌流式传输。
 
-## Deployment
+## 部署
 
-So you've built your LangGraph object - now what?
+现在您已经构建了 LangGraph 对象——接下来呢？
 
-Now you need to deploy it. 
-There are many ways to deploy LangGraph objects, and the right solution depends on your needs and use case.
-We're working on adding JavaScript/TypeScript support for LangGraph cloud, but in the meantime, here are some options:
+现在您需要部署它。
+部署 LangGraph 对象有多种方式，正确的解决方案取决于您的需求和用例。
+我们正在努力为 LangGraph cloud 添加 JavaScript/TypeScript 支持，但在此期间，以下是一些选项：
 
-- Use [Express.js](https://expressjs.com/) to stand up a server. You can then call this graph from inside the Express.js server as you see fit.
+- 使用 [Express.js](https://expressjs.com/) 搭建服务器。然后您可以根据需要在 Express.js 服务器内部调用该图。

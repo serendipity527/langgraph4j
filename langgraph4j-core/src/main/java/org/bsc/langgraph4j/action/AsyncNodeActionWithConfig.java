@@ -8,30 +8,30 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 /**
- * Represents an asynchronous action that can be executed with a configuration.
+ * 表示一个可以带配置参数运行的异步节点动作接口。
  *
- * @param <S> the type of the agent state
+ * @param <S> 代理状态的类型
  */
-public interface AsyncNodeActionWithConfig<S extends AgentState> extends BiFunction<S, RunnableConfig,CompletableFuture<Map<String, Object>>> {
+public interface AsyncNodeActionWithConfig<S extends AgentState> extends BiFunction<S, RunnableConfig, CompletableFuture<Map<String, Object>>> {
 
     /**
-     * Applies this action to the given agent state.
+     * 针对给定的代理状态和执行配置执行动作。
      *
-     * @param state the agent state
-     * @return a CompletableFuture representing the result of the action
+     * @param state  代理状态
+     * @param config 运行配置
+     * @return 包含动作结果的CompletableFuture
      */
     CompletableFuture<Map<String, Object>> apply(S state, RunnableConfig config);
 
-
     /**
-     * Converts a synchronous {@link NodeActionWithConfig} to an asynchronous one.
+     * 将同步的 {@link NodeActionWithConfig} 转换为异步动作接口。
      *
-     * @param <S>   the type of agent state
-     * @param syncAction the synchronous action to be converted
-     * @return an {@link AsyncNodeActionWithConfig} representation of the given synchronous action
+     * @param syncAction 要转换的同步节点动作
+     * @param <S>        代理状态类型
+     * @return 异步节点动作接口
      */
     static <S extends AgentState> AsyncNodeActionWithConfig<S> node_async(NodeActionWithConfig<S> syncAction) {
-        return (t, config ) -> {
+        return (t, config) -> {
             CompletableFuture<Map<String, Object>> result = new CompletableFuture<>();
             try {
                 result.complete(syncAction.apply(t, config));
@@ -43,11 +43,11 @@ public interface AsyncNodeActionWithConfig<S extends AgentState> extends BiFunct
     }
 
     /**
-     * Adapts a simple AsyncNodeAction to an AsyncNodeActionWithConfig.
+     * 将一个简单的 AsyncNodeAction 适配成带配置的 AsyncNodeActionWithConfig。
      *
-     * @param action the simple AsyncNodeAction to be adapted
-     * @param <S> the type of the agent state
-     * @return an AsyncNodeActionWithConfig that wraps the given AsyncNodeAction
+     * @param action 简单的异步节点动作
+     * @param <S>    代理状态类型
+     * @return 带配置参数的异步节点动作
      */
     static <S extends AgentState> AsyncNodeActionWithConfig<S> of(AsyncNodeAction<S> action) {
         return (t, config) -> action.apply(t);
