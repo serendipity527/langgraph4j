@@ -22,13 +22,14 @@ import static org.bsc.langgraph4j.state.AgentState.MARK_FOR_REMOVAL;
 import static org.bsc.langgraph4j.utils.CollectionsUtils.mergeMap;
 
 /**
- * Represents a state graph with nodes and edges.
+ * 表示带有节点和边的状态图。
  *
- * @param <State> the type of the state associated with the graph
+ * @param <State> 与图关联的状态类型
  */
 public class StateGraph<State extends AgentState> {
+
     /**
-     * Enum representing various error messages related to graph state.
+     * 内部枚举，表示与图状态相关的各种错误消息。
      */
     public enum Errors {
         invalidNodeIdentifier("[%s] is not a valid node id!"),
@@ -46,8 +47,7 @@ public class StateGraph<State extends AgentState> {
         duplicateEdgeTargetError("edge [%s] has duplicate targets %s!"),
         unsupportedConditionalEdgeOnParallelNode("parallel node doesn't support conditional branch, but on [%s] a conditional branch on %s have been found!"),
         illegalMultipleTargetsOnParallelNode("parallel node [%s] must have only one target, but %s have been found!"),
-        interruptionNodeNotExist( "node '%s' configured as interruption doesn't exist!")
-        ;
+        interruptionNodeNotExist("node '%s' configured as interruption doesn't exist!");
 
         private final String errorMessage;
 
@@ -56,30 +56,48 @@ public class StateGraph<State extends AgentState> {
         }
 
         /**
-         * Creates a new GraphStateException with the formatted error message.
+         * 创建带有格式化错误信息的 GraphStateException。
          *
-         * @param args the arguments to format the error message
-         * @return a new GraphStateException
+         * @param args 用于格式化错误消息的参数
+         * @return 新的 GraphStateException
          */
         public GraphStateException exception(Object... args) {
             return new GraphStateException(format(errorMessage, (Object[]) args));
         }
     }
 
+    /**
+     * 结束节点标识符
+     */
     public static String END = "__END__";
+    /**
+     * 开始节点标识符
+     */
     public static String START = "__START__";
 
+    /**
+     * 图的节点集合
+     */
     final Nodes<State> nodes = new Nodes<>();
+    /**
+     * 图的边集合
+     */
     final Edges<State> edges = new Edges<>();
 
+    /**
+     * 状态通道映射
+     */
     private final Map<String, Channel<?>> channels;
 
+    /**
+     * 状态序列化器
+     */
     private final StateSerializer<State> stateSerializer;
 
     /**
-     *
-     * @param channels the state's schema of the graph
-     * @param stateSerializer the serializer to serialize the state
+     * 构造状态图
+     * @param channels 图的状态 schema
+     * @param stateSerializer 状态序列化器
      */
     public StateGraph(Map<String, Channel<?>> channels,
                       StateSerializer<State> stateSerializer) {
@@ -88,69 +106,77 @@ public class StateGraph<State extends AgentState> {
     }
 
     /**
-     * Constructs a new StateGraph with the specified serializer.
-     *
-     * @param stateSerializer the serializer to serialize the state
+     * 用指定的状态序列化器构造状态图。
+     * @param stateSerializer 状态序列化器
      */
-    public StateGraph( StateSerializer<State> stateSerializer) {
-        this( Map.of(), stateSerializer );
-
+    public StateGraph(StateSerializer<State> stateSerializer) {
+        this(Map.of(), stateSerializer);
     }
 
     /**
-     * Constructs a new StateGraph with the specified state factory.
-     *
-     * @param stateFactory the factory to create agent states
+     * 基于状态工厂构造状态图。
+     * @param stateFactory 用于创建 agent 状态的工厂
      */
     public StateGraph(AgentStateFactory<State> stateFactory) {
-        this( Map.of(), stateFactory);
+        this(Map.of(), stateFactory);
 
     }
 
     /**
-     *
-     * @param channels the state's schema of the graph
-     * @param stateFactory the factory to create agent states
+     * 构造方法，带有通道与状态工厂参数
+     * @param channels 图的状态 schema
+     * @param stateFactory 状态工厂
      */
     public StateGraph(Map<String, Channel<?>> channels, AgentStateFactory<State> stateFactory) {
-        this( channels, new ObjectStreamStateSerializer<>(stateFactory) );
+        this(channels, new ObjectStreamStateSerializer<>(stateFactory));
     }
 
+    /**
+     * 获取当前状态序列化器
+     * @return 状态序列化器
+     */
     public StateSerializer<State> getStateSerializer() {
-         return stateSerializer;
+        return stateSerializer;
     }
 
+    /**
+     * 获取 AgentStateFactory
+     * @return agent 状态工厂
+     */
     public final AgentStateFactory<State> getStateFactory() {
         return stateSerializer.stateFactory();
     }
 
+    /**
+     * 获取不可变通道映射
+     * @return channel 映射
+     */
     public Map<String, Channel<?>> getChannels() {
         return unmodifiableMap(channels);
     }
 
     /**
-     * Adds a node to the graph.
-     *
-     * @param id     the identifier of the node
-     * @param action the action to be performed by the node
-     * @throws GraphStateException if the node identifier is invalid or the node already exists
+     * 添加节点到图中
+     * @param id 节点标识符
+     * @param action 节点对应的异步动作
+     * @throws GraphStateException 当节点 id 不合法或已存在时抛出
      */
     public StateGraph<State> addNode(String id, AsyncNodeAction<State> action) throws GraphStateException {
-        return addNode( id,  AsyncNodeActionWithConfig.of(action) );
+        return addNode(id, AsyncNodeActionWithConfig.of(action));
     }
 
     /**
-     *
-     * @param id the identifier of the node
-     * @param action the action to be performed by the node
-     * @return this
-     * @throws GraphStateException if the node identifier is invalid or the node already exists
+     * 添加节点到图中
+     * @param id 节点标识符
+     * @param action 节点动作
+     * @return 当前状态图
+     * @throws GraphStateException 如果节点已存在或 id 不合法
      */
     public StateGraph<State> addNode(String id, AsyncNodeActionWithConfig<State> action) throws GraphStateException {
         if (Objects.equals(id, END)) {
             throw Errors.invalidNodeIdentifier.exception(END);
         }
-        Node<State> node = new Node<>(id, (config ) -> action );
+        Node<State> node = new Node<>(id, (config) -> action);
 
         if (nodes.elements.contains(node)) {
             throw Errors.duplicateNodeError.exception(id);
@@ -161,21 +187,19 @@ public class StateGraph<State extends AgentState> {
     }
 
     /**
-     * Adds node that behave as conditional edges.
-     *
-     * @param id  the identifier of the  node
-     * @param action node action to determine the next target node
-     * @param mappings  the mappings of conditions to target nodes
-     * @throws GraphStateException if the node identifier is invalid, the mappings are empty, or the node already exists
+     * 添加一个带有条件边行为的节点
+     * @param id 节点 id
+     * @param action 用于决定下一个目标节点的动作
+     * @param mappings 条件到目标节点的映射
+     * @throws GraphStateException 如果 id 不合法，映射为空或节点已存在
      */
     public StateGraph<State> addNode(String id, AsyncCommandAction<State> action, Map<String, String> mappings) throws GraphStateException {
-
-        // SIMPLER IMPLEMENTATION
-        return addNode( id, ( state, config ) -> completedFuture(Map.of()) )
-                .addConditionalEdges( id, action, mappings );
+        // 简单实现，将节点行为置空，并添加条件边
+        return addNode(id, (state, config) -> completedFuture(Map.of()))
+                .addConditionalEdges(id, action, mappings);
 
         /*
-        // ALTERNATIVE IMPLEMENTATION
+        // 另外一种实现方式
         final var nextNodeIdProperty = format("%s_next_node", id );
 
         return addNode( id, ( state, config ) ->
@@ -192,13 +216,12 @@ public class StateGraph<State extends AgentState> {
     }
 
     /**
-     * Adds a subgraph to the state graph by creating a node with the specified identifier.
-     * This implies that Subgraph share the same state with parent graph
-     *
-     * @param id the identifier of the node representing the subgraph
-     * @param subGraph the compiled subgraph to be added
-     * @return this state graph instance
-     * @throws GraphStateException if the node identifier is invalid or the node already exists
+     * 添加一个已编译子图作为节点
+     * 子图与父图共享相同的状态
+     * @param id 子图节点标识符
+     * @param subGraph 已编译子图
+     * @return 当前状态图
+     * @throws GraphStateException 如果 id 不合法或节点已存在
      */
     public StateGraph<State> addNode(String id, CompiledGraph<State> subGraph) throws GraphStateException {
         if (Objects.equals(id, END)) {
@@ -213,18 +236,15 @@ public class StateGraph<State extends AgentState> {
 
         nodes.elements.add(node);
         return this;
-
     }
 
     /**
-     * Adds a subgraph to the state graph by creating a node with the specified identifier.
-     * This implies that Subgraph share the same state with parent graph
-     *
-     * @param id the identifier of the node representing the subgraph
-     * @param subGraph the compiled subgraph to be added
-     * @return this state graph instance
-     * @throws GraphStateException if the node identifier is invalid or the node already exists
-     * @deprecated use {@code addNode( String, CompiledGraph<State> )} instead
+     * 添加子图作为节点 (已废弃)
+     * @param id 子图节点标识符
+     * @param subGraph 已编译子图
+     * @return 当前状态图
+     * @throws GraphStateException 如果 id 不合法或节点已存在
+     * @deprecated 使用 addNode(String, CompiledGraph<State>) 替代
      */
     @Deprecated(forRemoval = true)
     public StateGraph<State> addSubgraph(String id, CompiledGraph<State> subGraph) throws GraphStateException {
@@ -232,13 +252,12 @@ public class StateGraph<State extends AgentState> {
     }
 
     /**
-     * Adds a subgraph to the state graph by creating a node with the specified identifier.
-     * This implies that Subgraph share the same state with parent graph
-     *
-     * @param id the identifier of the node representing the subgraph
-     * @param subGraph the subgraph to be added. it will be compiled on compilation of the parent
-     * @return this state graph instance
-     * @throws GraphStateException if the node identifier is invalid or the node already exists
+     * 添加 StateGraph 类型的子图作为节点
+     * 子图与父图共享同一个状态
+     * @param id 子图节点标识符
+     * @param subGraph 子图（将在父图编译时编译自身）
+     * @return 当前状态图
+     * @throws GraphStateException 如果 id 不合法或节点已存在
      */
     public StateGraph<State> addNode(String id, StateGraph<State> subGraph) throws GraphStateException {
         if (Objects.equals(id, END)) {
@@ -247,7 +266,7 @@ public class StateGraph<State extends AgentState> {
 
         subGraph.validateGraph();
 
-        var node = new SubStateGraphNode<>( id, subGraph );
+        var node = new SubStateGraphNode<>(id, subGraph);
 
         if (nodes.elements.contains(node)) {
             throw Errors.duplicateNodeError.exception(id);
@@ -258,54 +277,50 @@ public class StateGraph<State extends AgentState> {
     }
 
     /**
-     * Adds a subgraph to the state graph by creating a node with the specified identifier.
-     * This implies that Subgraph share the same state with parent graph
-     *
-     * @param id the identifier of the node representing the subgraph
-     * @param subGraph the subgraph to be added. it will be compiled on compilation of the parent
-     * @return this state graph instance
-     * @throws GraphStateException if the node identifier is invalid or the node already exists
-     * @deprecated use {@code add( String id, StateGraph<State> )} instead
+     * 添加子图作为节点 (已废弃)
+     * 子图与父图共享同一个状态
+     * @param id 子图节点标识符
+     * @param subGraph 子图
+     * @return 当前状态图
+     * @throws GraphStateException 如果 id 不合法或节点已存在
+     * @deprecated 使用 add(String, StateGraph<State>) 替代
      */
     @Deprecated(forRemoval = true)
     public StateGraph<State> addSubgraph(String id, StateGraph<State> subGraph) throws GraphStateException {
-        return addNode( id, subGraph );
+        return addNode(id, subGraph);
     }
 
     /**
-     * Adds an edge to the graph.
-     *
-     * @param sourceId the identifier of the source node
-     * @param targetId the identifier of the target node
-     * @throws GraphStateException if the edge identifier is invalid or the edge already exists
+     * 添加一条无条件边
+     * @param sourceId 源节点 id
+     * @param targetId 目标节点 id
+     * @throws GraphStateException 如果边已存在或 id 不合法
      */
     public StateGraph<State> addEdge(String sourceId, String targetId) throws GraphStateException {
         if (Objects.equals(sourceId, END)) {
             throw Errors.invalidEdgeIdentifier.exception(END);
         }
 
-        var newEdge = new Edge<>(sourceId, new EdgeValue<State>(targetId) );
+        var newEdge = new Edge<>(sourceId, new EdgeValue<State>(targetId));
 
-        int index = edges.elements.indexOf( newEdge );
-        if( index >= 0 ) {
+        int index = edges.elements.indexOf(newEdge);
+        if (index >= 0) {
             var newTargets = new ArrayList<>(edges.elements.get(index).targets());
-            newTargets.add( newEdge.target() );
-            edges.elements.set( index, new Edge<>(sourceId, newTargets) );
-        }
-        else {
-            edges.elements.add( newEdge );
+            newTargets.add(newEdge.target());
+            edges.elements.set(index, new Edge<>(sourceId, newTargets));
+        } else {
+            edges.elements.add(newEdge);
         }
 
         return this;
     }
 
     /**
-     * Adds conditional edges to the graph.
-     *
-     * @param sourceId  the identifier of the source node
-     * @param condition the condition to determine the target node
-     * @param mappings  the mappings of conditions to target nodes
-     * @throws GraphStateException if the edge identifier is invalid, the mappings are empty, or the edge already exists
+     * 添加条件边
+     * @param sourceId 源节点 id
+     * @param condition 条件判断逻辑
+     * @param mappings 条件到目标节点的映射
+     * @throws GraphStateException 如果边已存在、id 不合法或条件映射为空
      */
     public StateGraph<State> addConditionalEdges(String sourceId, AsyncCommandAction<State> condition, Map<String, String> mappings) throws GraphStateException {
         if (Objects.equals(sourceId, END)) {
@@ -315,53 +330,53 @@ public class StateGraph<State extends AgentState> {
             throw Errors.edgeMappingIsEmpty.exception(sourceId);
         }
 
-        var newEdge =  new Edge<>(sourceId, new EdgeValue<>( new EdgeCondition<>( condition, mappings)) );
+        var newEdge = new Edge<>(sourceId, new EdgeValue<>(new EdgeCondition<>(condition, mappings)));
 
-        if( edges.elements.contains( newEdge ) ) {
+        if (edges.elements.contains(newEdge)) {
             throw Errors.duplicateConditionalEdgeError.exception(sourceId);
-        }
-        else {
-            edges.elements.add( newEdge );
+        } else {
+            edges.elements.add(newEdge);
         }
         return this;
     }
 
     /**
-     * Adds conditional edges to the graph.
-     *
-     * @param sourceId  the identifier of the source node
-     * @param condition the condition to determine the target node
-     * @param mappings  the mappings of conditions to target nodes
-     * @throws GraphStateException if the edge identifier is invalid, the mappings are empty, or the edge already exists
+     * 添加条件边的另一重载（通过 AsyncEdgeAction 包装）
+     * @param sourceId 源节点 id
+     * @param condition 条件判断逻辑
+     * @param mappings 条件到目标节点的映射
+     * @throws GraphStateException 如果边已存在、id 不合法或条件映射为空
      */
     public StateGraph<State> addConditionalEdges(String sourceId, AsyncEdgeAction<State> condition, Map<String, String> mappings) throws GraphStateException {
-        return addConditionalEdges( sourceId, AsyncCommandAction.of(condition), mappings);
+        return addConditionalEdges(sourceId, AsyncCommandAction.of(condition), mappings);
     }
 
-    void validateGraph( ) throws GraphStateException {
-        for( var node : nodes.elements ) {
+    /**
+     * 验证整个图的结构以及所有节点和边的合法性
+     * @throws GraphStateException 校验失败时抛出
+     */
+    void validateGraph() throws GraphStateException {
+        for (var node : nodes.elements) {
             node.validate();
         }
 
         var edgeStart = edges.edgeBySourceId(START)
                 .orElseThrow(Errors.missingEntryPoint::exception);
 
-        edgeStart.validate( nodes );
+        edgeStart.validate(nodes);
 
         for (Edge<State> edge : edges.elements) {
             edge.validate(nodes);
         }
-
     }
 
     /**
-     * Compiles the state graph into a compiled graph.
-     *
-     * @param config the compile configuration
-     * @return a compiled graph
-     * @throws GraphStateException if there are errors related to the graph state
+     * 编译状态图为可运行的已编译图
+     * @param config 编译配置
+     * @return 已编译图
+     * @throws GraphStateException 如果图中存在不合法结构
      */
-    public CompiledGraph<State> compile( CompileConfig config ) throws GraphStateException {
+    public CompiledGraph<State> compile(CompileConfig config) throws GraphStateException {
         Objects.requireNonNull(config, "config cannot be null");
 
         validateGraph();
@@ -370,60 +385,75 @@ public class StateGraph<State extends AgentState> {
     }
 
     /**
-     * Compiles the state graph into a compiled graph.
-     *
-     * @return a compiled graph
-     * @throws GraphStateException if there are errors related to the graph state
+     * 默认使用默认配置编译状态图
+     * @return 已编译图
+     * @throws GraphStateException 如果图不合法
      */
     public CompiledGraph<State> compile() throws GraphStateException {
         return compile(CompileConfig.builder().build());
     }
 
     /**
-     * Generates a drawable graph representation of the state graph.
-     *
-     * @param type the type of graph representation to generate
-     * @param title the title of the graph
-     * @param printConditionalEdges whether to print conditional edges
-     * @return a diagram code of the state graph
+     * 生成可视化/可绘制的状态图描述
+     * @param type 图类型
+     * @param title 图标题
+     * @param printConditionalEdges 是否显示条件边
+     * @return 图形表示
      */
-    public GraphRepresentation getGraph( GraphRepresentation.Type type, String title, boolean printConditionalEdges ) {
-
-        String content = type.generator.generate( nodes, edges, title, printConditionalEdges);
-
-        return new GraphRepresentation( type, content );
+    public GraphRepresentation getGraph(GraphRepresentation.Type type, String title, boolean printConditionalEdges) {
+        String content = type.generator.generate(nodes, edges, title, printConditionalEdges);
+        return new GraphRepresentation(type, content);
     }
 
     /**
-     * Generates a drawable graph representation of the state graph.
-     *
-     * @param type the type of graph representation to generate
-     * @param title the title of the graph
-     * @return a diagram code of the state graph
+     * 生成可视化/可绘制的状态图描述（条件边默认显示）
+     * @param type 图类型
+     * @param title 图标题
+     * @return 图形表示
      */
-    public GraphRepresentation getGraph( GraphRepresentation.Type type, String title ) {
-
-        String content = type.generator.generate( nodes, edges, title, true);
-
-        return new GraphRepresentation( type, content );
+    public GraphRepresentation getGraph(GraphRepresentation.Type type, String title) {
+        String content = type.generator.generate(nodes, edges, title, true);
+        return new GraphRepresentation(type, content);
     }
 
+    /**
+     * 节点内部类。包含本状态图所有节点的集合及常用操作。
+     */
     public static class Nodes<State extends AgentState> {
+        /**
+         * 节点集合，按插入顺序
+         */
         public final Set<Node<State>> elements;
 
-        public Nodes( Collection<Node<State>> elements ) {
+        /**
+         * 使用现有集合构造
+         * @param elements 节点集合
+         */
+        public Nodes(Collection<Node<State>> elements) {
             this.elements = new LinkedHashSet<>(elements);
         }
 
-        public Nodes( ) {
+        /**
+         * 默认构造，空集合
+         */
+        public Nodes() {
             this.elements = new LinkedHashSet<>();
         }
 
-        public boolean anyMatchById(String id ) {
+        /**
+         * 判断集合中是否有指定 id 的节点
+         * @param id 节点 id
+         * @return 是否命中
+         */
+        public boolean anyMatchById(String id) {
             return elements.stream()
-                    .anyMatch( n -> Objects.equals( n.id(), id) );
+                    .anyMatch(n -> Objects.equals(n.id(), id));
         }
 
+        /**
+         * 仅返回子图节点（SubStateGraphNode）
+         * @return 子图节点列表
+         */
         public List<SubStateGraphNode<State>> onlySubStateGraphNodes() {
             return elements.stream()
                     .filter(n -> n instanceof SubStateGraphNode<State>)
@@ -431,38 +461,62 @@ public class StateGraph<State extends AgentState> {
                     .toList();
         }
 
+        /**
+         * 返回非子图节点（非 SubStateGraphNode）
+         * @return 非子图节点列表
+         */
         public List<Node<State>> exceptSubStateGraphNodes() {
             return elements.stream()
-                    .filter(n ->  !(n instanceof SubStateGraphNode<State>) )
+                    .filter(n -> !(n instanceof SubStateGraphNode<State>))
                     .toList();
         }
     }
 
+    /**
+     * 边的内部类。包含本图所有边的集合及常用操作。
+     */
     public static class Edges<State extends AgentState> {
 
+        /**
+         * 边集合，按插入顺序
+         */
         public final List<Edge<State>> elements;
 
-        public Edges( Collection<Edge<State>> elements ) {
+        /**
+         * 以已有集合构造
+         * @param elements 边集合
+         */
+        public Edges(Collection<Edge<State>> elements) {
             this.elements = new LinkedList<>(elements);
         }
 
-        public Edges( ) {
+        /**
+         * 默认构造，空集合
+         */
+        public Edges() {
             this.elements = new LinkedList<>();
         }
 
-        public Optional<Edge<State>> edgeBySourceId(String sourceId ) {
+        /**
+         * 获取指定源节点的边（只返回第一个命中的）
+         * @param sourceId 源节点 id
+         * @return 可选的边
+         */
+        public Optional<Edge<State>> edgeBySourceId(String sourceId) {
             return elements.stream()
-                    .filter( e -> Objects.equals( e.sourceId(), sourceId ))
+                    .filter(e -> Objects.equals(e.sourceId(), sourceId))
                     .findFirst();
         }
 
-        public List<Edge<State>> edgesByTargetId(String targetId ) {
+        /**
+         * 查找所有目标节点 id 为 targetId 的边
+         * @param targetId 目标节点 id
+         * @return 所有命中边的集合
+         */
+        public List<Edge<State>> edgesByTargetId(String targetId) {
             return elements.stream()
-                    .filter( e -> e.anyMatchByTargetId(targetId)).toList();
+                    .filter(e -> e.anyMatchByTargetId(targetId)).toList();
         }
-
-
     }
 
 }
-
